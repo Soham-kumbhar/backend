@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -63,17 +65,22 @@ app = FastAPI(
 # ============================================================
 # CORS
 # ============================================================
+# Allowed origins now come from the ALLOWED_ORIGINS env var
+# (comma-separated), falling back to localhost for local dev.
+# Set ALLOWED_ORIGINS on your backend host to include your
+# deployed frontend URL, e.g.:
+#   ALLOWED_ORIGINS=https://frontend-zeta-one-69.vercel.app,http://localhost:5173
+
+_default_origins = "http://localhost:5173,http://127.0.0.1:5173"
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", _default_origins).split(",")
+    if origin.strip()
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        # Local development
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-
-        # Production frontend - Vercel
-        "https://frontend-zeta-one-69.vercel.app",
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -119,6 +126,18 @@ app.include_router(
 
 # ============================================================
 # VERSION ROUTES
+#
+# The dedicated version comparison router already provides:
+#
+# GET
+# /projects/{project_id}/versions/compare
+#
+# with:
+#   version_1
+#   version_2
+#
+# Keep this route in the version-scoped API rather than creating
+# a second project-level comparison endpoint.
 # ============================================================
 
 app.include_router(
